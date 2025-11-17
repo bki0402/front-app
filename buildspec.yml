@@ -17,13 +17,13 @@ phases:
       - docker push 539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/front:latest
 
       - echo Sending Kubernetes manifests to master node...
-      - sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -r k8s/* ubuntu@192.168.0.201:/home/ubuntu/deploy/front/
+      - sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -r k8s/* kevin@192.168.0.201:/home/ubuntu/deploy/front/
 
       - echo Applying Kubernetes deployment...
-      - sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@192.168.0.201 "kubectl apply -f /home/ubuntu/deploy/front/"
+      - sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no kevin@192.168.0.201 "kubectl apply -f /home/ubuntu/deploy/front/"
 
       - echo Restarting rollout...
-      - sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@192.168.0.201 "kubectl rollout restart deployment/front"
+      - sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no kevin@192.168.0.201 "kubectl rollout restart deployment/front"
 
 artifacts:
   files: '**/*'
