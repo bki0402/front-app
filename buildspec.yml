@@ -1,0 +1,29 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging into ECR...
+      - aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 539920679315.dkr.ecr.ap-northeast-2.amazonaws.com
+      - echo Build started on `date`
+  build:
+    commands:
+      - echo Building Docker image...
+      - docker build -t front-app .
+      - docker tag front-app:latest 539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/front:latest
+  post_build:
+    commands:
+      - echo Pushing image to ECR...
+      - docker push 539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/front:latest
+
+      - echo Sending Kubernetes manifests to master node...
+      - sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -r k8s/* ubuntu@192.168.0.201:/home/ubuntu/deploy/front/
+
+      - echo Applying Kubernetes deployment...
+      - sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@192.168.0.201 "kubectl apply -f /home/ubuntu/deploy/front/"
+
+      - echo Restarting rollout...
+      - sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@192.168.0.201 "kubectl rollout restart deployment/front"
+
+artifacts:
+  files: '**/*'
