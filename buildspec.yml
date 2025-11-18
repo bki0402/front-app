@@ -21,13 +21,13 @@ phases:
   post_build:
     commands:
       - echo Pushing image to ECR...
-      - docker push 539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/2team/front:$NEW_TAG
+      - docker push 539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/2team/front:$NEW_TAG  # Ensure NEW_TAG is used here
       - echo Updating ECS task definition...
       - sed -i "s|<image_uri>|539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/2team/front:$NEW_TAG|" ecs-task-definition.json
       - echo Registering new task definition with ECS...
       - aws ecs register-task-definition --cli-input-json file://ecs-task-definition.json
       - echo Updating ECS service...
-      - aws ecs update-service --cluster front-backend-cluster --service front-backend-service --force-new-deployment
+      - aws ecs update-service --cluster 2team --service front-backend-task-service-aky0pfgq --force-new-deployment
 
 artifacts:
   files: '**/*'
