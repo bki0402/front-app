@@ -3,27 +3,32 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      - echo Logging into ECR....
+      - echo Logging into ECR...
       - aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 539920679315.dkr.ecr.ap-northeast-2.amazonaws.com
       - echo Build started on `date`
+      - LATEST_TAG=$(aws ecr describe-images --repository-name 2team/front --query "imageDetails[*].imageTags" --output text | grep -oP '\d+\.\d+' | sort -V | tail -n 1)
+      - VERSION_PARTS=(${LATEST_TAG//./ })
+      - MAJOR=${VERSION_PARTS[0]}
+      - MINOR=${VERSION_PARTS[1]}
+      - NEW_MINOR=$((MINOR + 1))
+      - NEW_TAG="${MAJOR}.${NEW_MINOR}"
+      - echo "New version tag: $NEW_TAG"
   build:
     commands:
       - echo Building Docker image...
-      - docker build -t front-app .
-      - docker tag front-app:latest 539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/front:latest
+      - docker build -t front-app:$NEW_TAG .
+      - docker tag front-app:$NEW_TAG 539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/2team/front:$NEW_TAG
   post_build:
     commands:
       - echo Pushing image to ECR...
-      - docker push 539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/front:latest
-
+      - docker push 539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/2team/front:$NEW_TAG
       - echo Updating ECS task definition...
-      - sed -i 's|<image_uri>|539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/front:latest|' ecs-task-definition.json
-
+      - sed -i "s|<image_uri>|539920679315.dkr.ecr.ap-northeast-2.amazonaws.com/2team/front:$NEW_TAG|" ecs-task-definition.json
       - echo Registering new task definition with ECS...
       - aws ecs register-task-definition --cli-input-json file://ecs-task-definition.json
-
       - echo Updating ECS service...
       - aws ecs update-service --cluster front-backend-cluster --service front-backend-service --force-new-deployment
 
 artifacts:
   files: '**/*'
+
